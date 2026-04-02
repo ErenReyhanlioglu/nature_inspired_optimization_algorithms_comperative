@@ -1,0 +1,39 @@
+optimization_benchmark/
+│
+├── .venv/                              # Python virtual environment
+├── .gitignore                          # Git tracking exclusions
+├── requirements.txt                    # Project dependencies
+├── main_simulation.py                  # Entry point for the 1620 statistical runs
+├── main_showcase.py                    # Entry point for D=2 visualization runs
+├── config.py                           # Global configurations (hyperparameters, FEs, bounds)
+│
+├── src/                                # Source code directory
+│   ├── __init__.py
+│   │
+│   ├── algorithms/                     # Meta-heuristic algorithm implementations
+│   │   ├── __init__.py
+│   │   ├── base_optimizer.py           # Abstract base class (OOP inheritance)
+│   │   ├── pso.py                      # Particle Swarm Optimization
+│   │   ├── de.py                       # Differential Evolution
+│   │   ├── gwo.py                      # Grey Wolf Optimizer
+│   │   ├── abc.py                      # Artificial Bee Colony
+│   │   ├── rcga.py                     # Real-Coded Genetic Algorithm
+│   │   └── es.py                       # Evolution Strategies
+│   │
+│   ├── benchmarks/                     # Mathematical test environments
+│   │   ├── __init__.py
+│   │   └── functions.py                # Sphere, Rastrigin, Rosenbrock definitions
+│   │
+│   └── utils/                          # Helper modules
+│       ├── __init__.py
+│       ├── logger.py                   # I/O operations (JSON/CSV data logging)
+│       ├── statistics_engine.py        # Wilcoxon, Friedman, Mean, Median, Std calculations
+│       └── visualizer.py               # Convergence curves, boxplots, and 2D animations
+│
+├── data/                               # Data storage (ignored in version control)
+│   ├── raw/                            # 1620 raw JSON/CSV logs
+│   └── processed/                      # Aggregated statistical tables
+│
+└── outputs/                            # Generated artifacts
+    ├── figures/                        # Static convergence and boxplot images
+    └── animations/                     # 3D surface GIFs/MP4s from showcase runs
