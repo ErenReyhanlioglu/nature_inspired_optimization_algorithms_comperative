@@ -8,18 +8,27 @@ class ES(BaseOptimizer):
     Uses Gaussian Mutation with the 1/5 Success Rule for dynamic step-size adaptation.
     Inherits administrative functions from BaseOptimizer.
     """
-    def __init__(self, objective_func, bounds, dim, pop_size, max_fes, seed, 
-                 mu=None, lambd=None, sigma_init=None):
-        super().__init__(objective_func, bounds, dim, pop_size, max_fes, seed)
+    def __init__(self, objective_func, bounds, dim, pop_size, max_fes, seed, **kwargs):
+        super().__init__(objective_func, bounds, dim, pop_size, max_fes, seed, **kwargs)
         
         # ES notation: mu = number of parents, lambd = number of offspring
-        self.mu = mu if mu is not None else self.pop_size // 4
-        self.lambd = lambd if lambd is not None else self.pop_size
+        # Map from config if provided, otherwise compute default
+        if getattr(self, 'mu', None) is None:
+            self.mu = self.pop_size // 4
+        
+        if getattr(self, 'lambd', None) is None:
+            self.lambd = self.pop_size
+            
+        self.hparams['mu'] = self.mu
+        self.hparams['lambd'] = self.lambd
         
         # Initial mutation step size (sigma)
-        # Default: 10% of the search space range
         range_width = self.bounds[1] - self.bounds[0]
-        self.sigma = sigma_init if sigma_init is not None else range_width * 0.1
+        if getattr(self, 'sigma_init', None) is None:
+            self.sigma_init = range_width * 0.1
+            
+        self.sigma = self.sigma_init
+        self.hparams['sigma_init'] = self.sigma_init
         
         # Parameters for the 1/5 Success Rule
         self.k = 0.85  # Decrease factor
@@ -36,7 +45,7 @@ class ES(BaseOptimizer):
         
         generation_count = 0
         
-        while self.fes_counter < self.max_fes:
+        while self.fes_counter < self.max_fes and self.best_fitness > 1e-8:
             generation_count += 1
             offspring_population = []
             
@@ -58,15 +67,12 @@ class ES(BaseOptimizer):
             offspring_fitness = self.evaluate_fitness(offspring_population)
             
             # 4. Success Rule Tracking
-            # Count how many offspring outperformed their random parent
             for i in range(self.lambd):
                 self.total_mutations += 1
-                # Check against the best parent fitness for a strict success criterion
                 if offspring_fitness[i] < np.min(parent_fitness):
                     self.success_count += 1
             
             # 5. Selection (mu + lambda strategy)
-            # Combine parents and offspring, then select the best 'mu'
             combined_pop = np.vstack((parents, offspring_population))
             combined_fit = np.concatenate((parent_fitness, offspring_fitness))
             
@@ -78,18 +84,17 @@ class ES(BaseOptimizer):
             if generation_count % self.update_interval == 0:
                 ps = self.success_count / self.total_mutations
                 if ps > 0.2:
-                    # High success rate: Increase sigma to explore further
                     self.sigma = self.sigma / self.k
                 elif ps < 0.2:
-                    # Low success rate: Decrease sigma to exploit locally
                     self.sigma = self.sigma * self.k
                 
-                # Reset counters for the next interval
                 self.success_count = 0
                 self.total_mutations = 0
 
         execution_time = time.time() - start_time
         is_successful = 1 if self.best_fitness <= 1e-8 else 0
+        
+        self.hparams['sigma_final'] = self.sigma
         
         return {
             "Algorithm_Name": "ES",
@@ -97,7 +102,7 @@ class ES(BaseOptimizer):
             "Dimension": self.dim,
             "Run_ID": None,
             "Random_Seed": self.seed,
-            "Hyperparameters": {"mu": self.mu, "lambda": self.lambd, "sigma_final": self.sigma},
+            "Hyperparameters": self.hparams,
             "Convergence_Data": {
                 "FEs_Milestones": self.fes_milestones,
                 "Fitness_Trajectory": self.convergence_curve

@@ -7,14 +7,8 @@ class PSO(BaseOptimizer):
     Particle Swarm Optimization (PSO) implementation.
     Inherits administrative functions from BaseOptimizer.
     """
-    def __init__(self, objective_func, bounds, dim, pop_size, max_fes, seed, w=0.7, c1=2.0, c2=2.0):
-        # Initialize the parent class (BaseOptimizer)
-        super().__init__(objective_func, bounds, dim, pop_size, max_fes, seed)
-        
-        # PSO specific hyperparameters
-        self.w = w
-        self.c1 = c1
-        self.c2 = c2
+    def __init__(self, objective_func, bounds, dim, pop_size, max_fes, seed, **kwargs):
+        super().__init__(objective_func, bounds, dim, pop_size, max_fes, seed, **kwargs)
 
     def optimize(self):
         """
@@ -23,7 +17,6 @@ class PSO(BaseOptimizer):
         """
         start_time = time.time()
         
-        # 1. Initialization phase
         positions = self.initialize_population()
         velocities = np.zeros((self.pop_size, self.dim))
         
@@ -32,14 +25,14 @@ class PSO(BaseOptimizer):
         # evaluate_fitness handles FEs counting and Global Best (GBest) updates
         personal_best_fitness = self.evaluate_fitness(positions)
         
-        # 2. Main Optimization Loop
+        # Main Optimization Loop
         # Loop strictly depends on the Function Evaluations limit, not iterations
-        while self.fes_counter < self.max_fes:
+        while self.fes_counter < self.max_fes and self.best_fitness > 1e-8:
             # Generate stochastic components for the entire swarm simultaneously
             r1 = np.random.rand(self.pop_size, self.dim)
             r2 = np.random.rand(self.pop_size, self.dim)
             
-            # Vectorized Velocity Update
+            # self.w, self.c1, self.c2 are automatically available via setattr in BaseOptimizer
             cognitive_component = self.c1 * r1 * (personal_best_positions - positions)
             social_component = self.c2 * r2 * (self.best_position - positions)
             velocities = (self.w * velocities) + cognitive_component + social_component
@@ -59,20 +52,19 @@ class PSO(BaseOptimizer):
             personal_best_positions[improvement_mask] = positions[improvement_mask]
             personal_best_fitness[improvement_mask] = current_fitness[improvement_mask]
 
-        # 3. Finalization and Metrics Collection
+        # Finalization and Metrics Collection
         execution_time = time.time() - start_time
         
         # Define success threshold (epsilon = 1e-8)
         is_successful = 1 if self.best_fitness <= 1e-8 else 0
         
-        # Structure the final output for the statistics engine
         return {
             "Algorithm_Name": "PSO",
             "Function_Name": self.objective_func.__name__,
             "Dimension": self.dim,
-            "Run_ID": None, # Will be assigned by main_simulation.py
+            "Run_ID": None, 
             "Random_Seed": self.seed,
-            "Hyperparameters": {"w": self.w, "c1": self.c1, "c2": self.c2},
+            "Hyperparameters": self.hparams,
             "Convergence_Data": {
                 "FEs_Milestones": self.fes_milestones,
                 "Fitness_Trajectory": self.convergence_curve

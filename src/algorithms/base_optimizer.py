@@ -8,7 +8,7 @@ class BaseOptimizer(ABC):
     Handles administrative tasks: boundary enforcement, population initialization,
     Function Evaluations (FEs) counting, and statistical trajectory logging.
     """
-    def __init__(self, objective_func, bounds, dim, pop_size, max_fes, seed):
+    def __init__(self, objective_func, bounds, dim, pop_size, max_fes, seed, **kwargs):
         self.objective_func = objective_func
         self.bounds = bounds
         self.dim = dim
@@ -16,16 +16,18 @@ class BaseOptimizer(ABC):
         self.max_fes = max_fes
         self.seed = seed
         
-        # Operational states
+        self.hparams = kwargs
+        
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+        
         self.fes_counter = 0
         self.best_fitness = float('inf')
         self.best_position = np.zeros(dim)
         
-        # Data logging structures for Convergence Curve and Final Output
         self.convergence_curve = []
         self.fes_milestones = []
         
-        # Ensure reproducibility by fixing the stochastic seed per run
         np.random.seed(self.seed)
 
     def initialize_population(self):

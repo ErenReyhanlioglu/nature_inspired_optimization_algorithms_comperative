@@ -8,18 +8,13 @@ class RCGA(BaseOptimizer):
     Uses Arithmetic Crossover for exploration and Gaussian Mutation for exploitation.
     Inherits administrative functions from BaseOptimizer.
     """
-    def __init__(self, objective_func, bounds, dim, pop_size, max_fes, seed, 
-                 pc=0.8, pm=0.1, tournament_size=3):
-        super().__init__(objective_func, bounds, dim, pop_size, max_fes, seed)
-        
-        # RCGA specific hyperparameters
-        self.pc = pc  # Crossover probability
-        self.pm = pm  # Mutation probability
-        self.tournament_size = tournament_size
+    def __init__(self, objective_func, bounds, dim, pop_size, max_fes, seed, **kwargs):
+        super().__init__(objective_func, bounds, dim, pop_size, max_fes, seed, **kwargs)
 
     def tournament_selection(self, population, fitness):
         """
         Selects a single parent using tournament selection logic.
+        self.tournament_size is dynamically mapped from kwargs in BaseOptimizer.
         """
         indices = np.random.choice(len(population), self.tournament_size, replace=False)
         tournament_fitness = fitness[indices]
@@ -33,7 +28,7 @@ class RCGA(BaseOptimizer):
         population = self.initialize_population()
         fitness = self.evaluate_fitness(population)
         
-        while self.fes_counter < self.max_fes:
+        while self.fes_counter < self.max_fes and self.best_fitness > 1e-8:
             new_population = []
             
             # 2. Reproduction Loop
@@ -43,6 +38,7 @@ class RCGA(BaseOptimizer):
                 parent2 = self.tournament_selection(population, fitness)
                 
                 # Crossover (Arithmetic Crossover)
+                # self.pc is automatically mapped from config
                 if np.random.rand() < self.pc:
                     alpha = np.random.rand()
                     offspring1 = alpha * parent1 + (1 - alpha) * parent2
@@ -51,6 +47,7 @@ class RCGA(BaseOptimizer):
                     offspring1, offspring2 = parent1.copy(), parent2.copy()
                 
                 # Mutation (Gaussian Mutation)
+                # self.pm is automatically mapped from config
                 for offspring in [offspring1, offspring2]:
                     if np.random.rand() < self.pm:
                         # Mutation strength scales with search space width
@@ -77,7 +74,7 @@ class RCGA(BaseOptimizer):
             "Dimension": self.dim,
             "Run_ID": None,
             "Random_Seed": self.seed,
-            "Hyperparameters": {"pc": self.pc, "pm": self.pm, "tournament_size": self.tournament_size},
+            "Hyperparameters": self.hparams,
             "Convergence_Data": {
                 "FEs_Milestones": self.fes_milestones,
                 "Fitness_Trajectory": self.convergence_curve

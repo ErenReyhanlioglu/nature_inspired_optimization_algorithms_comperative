@@ -6,17 +6,22 @@ class ABC(BaseOptimizer):
     """
     Artificial Bee Colony (ABC) implementation.
     Focuses on localized exploitation (Employed/Onlooker) and global exploration (Scout).
-    Inherits administrative functions from BaseOptimizer. [cite: 101, 245]
+    Inherits administrative functions from BaseOptimizer.
     """
-    def __init__(self, objective_func, bounds, dim, pop_size, max_fes, seed, limit=None):
-        super().__init__(objective_func, bounds, dim, pop_size, max_fes, seed)
+    def __init__(self, objective_func, bounds, dim, pop_size, max_fes, seed, **kwargs):
+        super().__init__(objective_func, bounds, dim, pop_size, max_fes, seed, **kwargs)
         
         # In ABC, food sources are pop_size / 2
         self.food_number = self.pop_size // 2
-        # Limit for abandoning a food source (Standard: FoodNumber * Dimension) [cite: 110]
-        self.limit = limit if limit is not None else (self.food_number * self.dim)
         
-        # Trial counters for each food source
+        # Limit for abandoning a food source (Standard: FoodNumber * Dimension)
+        # Check if limit was provided and is not None; otherwise, calculate it
+        if getattr(self, 'limit', None) is None:
+            self.limit = self.food_number * self.dim
+            
+        self.hparams['limit'] = self.limit
+        self.hparams['food_number'] = self.food_number
+        
         self.trials = np.zeros(self.food_number)
 
     def optimize(self):
@@ -28,7 +33,7 @@ class ABC(BaseOptimizer):
         foods = np.random.uniform(lower_bound, upper_bound, (self.food_number, self.dim))
         fitness = self.evaluate_fitness(foods) # BaseOptimizer updates best_fitness here
         
-        while self.fes_counter < self.max_fes:
+        while self.fes_counter < self.max_fes and self.best_fitness > 1e-8:
             
             # --- EMPLOYED BEES PHASE --- 
             for i in range(self.food_number):
@@ -36,7 +41,7 @@ class ABC(BaseOptimizer):
                 k = np.random.choice([idx for idx in range(self.food_number) if idx != i])
                 phi = np.random.uniform(-1, 1, self.dim)
                 
-                # Generate candidate food source [cite: 113]
+                # Generate candidate food source
                 candidate = foods[i] + phi * (foods[i] - foods[k])
                 candidate = self.enforce_boundaries(np.atleast_2d(candidate))
                 
@@ -95,7 +100,7 @@ class ABC(BaseOptimizer):
             "Dimension": self.dim,
             "Run_ID": None,
             "Random_Seed": self.seed,
-            "Hyperparameters": {"limit": self.limit, "food_number": self.food_number},
+            "Hyperparameters": self.hparams,
             "Convergence_Data": {
                 "FEs_Milestones": self.fes_milestones,
                 "Fitness_Trajectory": self.convergence_curve
