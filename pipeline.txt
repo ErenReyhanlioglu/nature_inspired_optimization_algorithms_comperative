@@ -1,4 +1,4 @@
-optimization_benchmark/
+nature_inspired_optimization_algorithms_comperative/
 │
 ├── .venv/                              # Python virtual environment
 ├── .gitignore                          # Git tracking exclusions

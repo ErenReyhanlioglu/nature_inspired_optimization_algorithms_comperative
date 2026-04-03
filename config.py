@@ -1,19 +1,20 @@
 import numpy as np
 
-# 1. Global Simulation Constants
-DIMENSIONS = [10, 30, 50]  # Scalability test levels 
+DIMENSIONS = [10, 20, 30]  # Scalability test levels 
 RUNS_PER_SCENARIO = 30     # Independent runs for statistical significance 
-POP_SIZE = 30              # Fixed population size for all algorithms 
 
-# Maximum Function Evaluations (Max FEs) based on dimension 
-# Standard: D * 10,000 
+#  Size = D * 5
+POP_SIZE_MULTIPLIER = 5
+
+SUCCESS_THRESHOLD = 1e-8
+
+# FEs = 10,000 * D
 MAX_FES_PER_DIM = {
     10: 100000,
-    30: 300000,
-    50: 500000
+    20: 200000,
+    30: 300000
 }
 
-# 2. Random Seeds (Deterministic for reproducibility) 
 # 30 unique seeds to be used across all 18 scenarios
 RANDOM_SEEDS = [
     42, 101, 202, 303, 404, 505, 606, 707, 808, 909,
@@ -21,20 +22,19 @@ RANDOM_SEEDS = [
     123, 456, 789, 987, 654, 321, 543, 210, 135, 246
 ]
 
-# 3. Algorithm Hyperparameters 
-# These values are based on standard literature recommendations
 HYPERPARAMETERS = {
-    "PSO": {"w": 0.7298, "c1": 1.49618, "c2": 1.49618}, # Standard Clerc-Kennedy settings
-    "DE": {"F": 0.5, "CR": 0.9}, # Common DE/rand/1/bin defaults 
-    "GWO": {"a_start": 2.0, "a_end": 0.0}, # Linear decay of a 
-    "ABC": {"limit": None}, # If None, will be calculated as (FoodNumber * D) 
-    "RCGA": {"pc": 0.8, "pm": 0.1, "tournament_size": 3}, # 
-    "ES": {"mu": 7, "lambd": 30, "sigma_init": None} # (mu + lambda) strategy 
+    "PSO": {"w": 0.7298, "c1": 1.49618, "c2": 1.49618},
+    "DE": {"F": 0.5, "CR": 0.9}, 
+    "GWO": {"a_start": 2.0, "a_end": 0.0}, 
+    "ABC": {"limit": None}, 
+    "RCGA": {"pc": 0.8, "pm": None, "tournament_size": 3}, # pm=None -> 1/dim adaptive
+    # lambd is set to None to dynamically match the population size at runtime. 
+    # mu will be calculated as lambd // 7 (Schwefel 1/7 rule).
+    "ES": {"mu": None, "lambd": None, "sigma_init": None} 
 }
 
-# 4. Function Meta-Data (Bounds and Global Optima) 
 FUNCTION_CONFIG = {
     "sphere": {"bounds": [-100.0, 100.0], "optimum": 0.0},
-    "rastrigin": {"bounds": [-5.12, 5.12], "optimum": 0.0},
-    "rosenbrock": {"bounds": [-30.0, 30.0], "optimum": 0.0}
+    "ackley": {"bounds": [-32.768, 32.768], "optimum": 0.0},
+    "zakharov": {"bounds": [-5.0, 10.0], "optimum": 0.0}
 }
