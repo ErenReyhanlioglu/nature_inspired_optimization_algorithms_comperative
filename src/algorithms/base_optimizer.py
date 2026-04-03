@@ -15,8 +15,10 @@ class BaseOptimizer(ABC):
         self.pop_size = pop_size
         self.max_fes = max_fes
         self.seed = seed
+        self.success_threshold = kwargs.get('success_threshold', 1e-8)
         
         self.hparams = kwargs
+        self.hparams['success_threshold'] = self.success_threshold
         
         for key, value in kwargs.items():
             setattr(self, key, value)
@@ -24,10 +26,14 @@ class BaseOptimizer(ABC):
         self.fes_counter = 0
         self.best_fitness = float('inf')
         self.best_position = np.zeros(dim)
-        
+
         self.convergence_curve = []
         self.fes_milestones = []
-        
+
+        # Milestone-based logging: record at every 1% of max_fes (~100 data points)
+        self._log_interval = max(1, max_fes // 100)
+        self._next_log_point = 0  # Log the very first evaluation as the starting point
+
         np.random.seed(self.seed)
 
     def initialize_population(self):
@@ -62,13 +68,15 @@ class BaseOptimizer(ABC):
         
         # Update global best if a superior solution is found
         if current_best_val < self.best_fitness:
-            self.best_fitness = current_best_val
+            self.best_fitness = float(current_best_val)
             self.best_position = positions[current_best_idx].copy()
             
-        # Trajectory logging (Records the absolute global best found so far)
-        self.fes_milestones.append(self.fes_counter)
-        self.convergence_curve.append(self.best_fitness)
-        
+        # Milestone-based trajectory logging (~100 data points total)
+        if self.fes_counter >= self._next_log_point or self.fes_counter >= self.max_fes:
+            self.fes_milestones.append(self.fes_counter)
+            self.convergence_curve.append(self.best_fitness)
+            self._next_log_point += self._log_interval
+
         return fitness_values
 
     @abstractmethod

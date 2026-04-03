@@ -5,68 +5,77 @@ from src.algorithms.base_optimizer import BaseOptimizer
 class RCGA(BaseOptimizer):
     """
     Real-Coded Genetic Algorithm (RCGA) implementation.
-    Uses Arithmetic Crossover for exploration and Gaussian Mutation for exploitation.
-    Inherits administrative functions from BaseOptimizer.
+    Upgraded with SBX (Simulated Binary Crossover) and Per-Gene Gaussian Mutation.
+    Inherits administrative functions and success threshold from BaseOptimizer.
     """
     def __init__(self, objective_func, bounds, dim, pop_size, max_fes, seed, **kwargs):
         super().__init__(objective_func, bounds, dim, pop_size, max_fes, seed, **kwargs)
+        
+        if getattr(self, 'pm', None) is None:
+            self.pm = 1.0 / self.dim
+        self.hparams['pm'] = self.pm
+
+        self.eta_c = getattr(self, 'eta_c', 20)
+        self.hparams['eta_c'] = self.eta_c
 
     def tournament_selection(self, population, fitness):
-        """
-        Selects a single parent using tournament selection logic.
-        self.tournament_size is dynamically mapped from kwargs in BaseOptimizer.
-        """
+        """Selects a single parent using tournament selection logic."""
         indices = np.random.choice(len(population), self.tournament_size, replace=False)
         tournament_fitness = fitness[indices]
         winner_idx = indices[np.argmin(tournament_fitness)]
         return population[winner_idx].copy()
 
     def optimize(self):
+        """
+        Executes the RCGA loop with SBX and Per-Gene Mutation tracking.
+        """
         start_time = time.time()
         
-        # 1. Initialization
         population = self.initialize_population()
         fitness = self.evaluate_fitness(population)
         
-        while self.fes_counter < self.max_fes and self.best_fitness > 1e-8:
+        while self.fes_counter < self.max_fes and self.best_fitness > self.success_threshold:
             new_population = []
             
-            # 2. Reproduction Loop
             while len(new_population) < self.pop_size:
-                # Selection
-                parent1 = self.tournament_selection(population, fitness)
-                parent2 = self.tournament_selection(population, fitness)
+                p1 = self.tournament_selection(population, fitness)
+                p2 = self.tournament_selection(population, fitness)
                 
-                # Crossover (Arithmetic Crossover)
-                # self.pc is automatically mapped from config
+                # --- SBX (Simulated Binary Crossover) ---
                 if np.random.rand() < self.pc:
-                    alpha = np.random.rand()
-                    offspring1 = alpha * parent1 + (1 - alpha) * parent2
-                    offspring2 = alpha * parent2 + (1 - alpha) * parent1
+                    u = np.random.rand(self.dim)
+                    beta = np.where(u <= 0.5, (2*u)**(1/(self.eta_c+1)), (1/(2*(1-u)))**(1/(self.eta_c+1)))
+                    
+                    off1 = 0.5 * ((1 + beta) * p1 + (1 - beta) * p2)
+                    off2 = 0.5 * ((1 - beta) * p1 + (1 + beta) * p2)
                 else:
-                    offspring1, offspring2 = parent1.copy(), parent2.copy()
+                    off1, off2 = p1.copy(), p2.copy()
                 
-                # Mutation (Gaussian Mutation)
-                # self.pm is automatically mapped from config
-                for offspring in [offspring1, offspring2]:
-                    if np.random.rand() < self.pm:
-                        # Mutation strength scales with search space width
+                # --- PER-GENE GAUSSIAN MUTATION ---
+                for offspring in [off1, off2]:
+                    mutation_mask = np.random.rand(self.dim) < self.pm
+                    if np.any(mutation_mask):
+                        # Mutation strength: 1% of the search space width
                         scale = (self.bounds[1] - self.bounds[0]) * 0.01
-                        mutation_noise = np.random.normal(0, scale, self.dim)
-                        offspring += mutation_noise
+                        noise = np.random.normal(0, scale, np.sum(mutation_mask))
+                        offspring[mutation_mask] += noise
                     
                     new_population.append(self.enforce_boundaries(np.atleast_2d(offspring))[0])
             
-            # 3. Evaluation and Replacement
             new_population = np.array(new_population[:self.pop_size])
             new_fitness = self.evaluate_fitness(new_population)
-            
-            # Generational replacement (with simple elitism check)
+
+            best_prev_idx = np.argmin(fitness)
+            worst_new_idx = np.argmax(new_fitness)
+            if fitness[best_prev_idx] < new_fitness[worst_new_idx]:
+                new_population[worst_new_idx] = population[best_prev_idx]
+                new_fitness[worst_new_idx] = fitness[best_prev_idx]
+
             population = new_population
             fitness = new_fitness
 
         execution_time = time.time() - start_time
-        is_successful = 1 if self.best_fitness <= 1e-8 else 0
+        is_successful = 1 if self.best_fitness <= self.success_threshold else 0
         
         return {
             "Algorithm_Name": "RCGA",

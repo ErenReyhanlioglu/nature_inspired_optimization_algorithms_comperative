@@ -5,24 +5,22 @@ from src.algorithms.base_optimizer import BaseOptimizer
 class ES(BaseOptimizer):
     """
     (mu + lambda) Evolution Strategies (ES) implementation.
-    Uses Gaussian Mutation with the 1/5 Success Rule for dynamic step-size adaptation.
-    Inherits administrative functions from BaseOptimizer.
+    Features dynamic parameter scaling (Schwefel 1/7 rule) and 
+    self-adaptive step-size control (1/5 Success Rule).
     """
     def __init__(self, objective_func, bounds, dim, pop_size, max_fes, seed, **kwargs):
         super().__init__(objective_func, bounds, dim, pop_size, max_fes, seed, **kwargs)
         
-        # ES notation: mu = number of parents, lambd = number of offspring
-        # Map from config if provided, otherwise compute default
-        if getattr(self, 'mu', None) is None:
-            self.mu = self.pop_size // 4
-        
         if getattr(self, 'lambd', None) is None:
             self.lambd = self.pop_size
+            
+        # Schwefel's 1/7 Rule
+        if getattr(self, 'mu', None) is None:
+            self.mu = max(1, self.lambd // 7)
             
         self.hparams['mu'] = self.mu
         self.hparams['lambd'] = self.lambd
         
-        # Initial mutation step size (sigma)
         range_width = self.bounds[1] - self.bounds[0]
         if getattr(self, 'sigma_init', None) is None:
             self.sigma_init = range_width * 0.1
@@ -30,49 +28,49 @@ class ES(BaseOptimizer):
         self.sigma = self.sigma_init
         self.hparams['sigma_init'] = self.sigma_init
         
-        # Parameters for the 1/5 Success Rule
-        self.k = 0.85  # Decrease factor
-        self.update_interval = 10 # Check success every 'n' generations
+        # 1/5 Success Rule 
+        self.k = 0.85      
+        self.update_interval = 10 
         self.success_count = 0
         self.total_mutations = 0
 
     def optimize(self):
+        """
+        Executes the (mu + lambda) ES loop with centralized threshold and FE budget control.
+        """
         start_time = time.time()
         
-        # 1. Initialization: Create initial parents
-        parents = self.initialize_population()[:self.mu]
+        initial_pop = self.initialize_population()
+        parents = initial_pop[:self.mu]
         parent_fitness = self.evaluate_fitness(parents)
         
         generation_count = 0
         
-        while self.fes_counter < self.max_fes and self.best_fitness > 1e-8:
+        while self.fes_counter < self.max_fes and self.best_fitness > self.success_threshold:
             generation_count += 1
             offspring_population = []
-            
-            # 2. Mutation Phase: Generate 'lambd' offspring from 'mu' parents
+            offspring_parent_indices = []
+
             for _ in range(self.lambd):
-                # Randomly select a parent
                 parent_idx = np.random.randint(0, self.mu)
                 parent = parents[parent_idx]
-                
-                # Apply Gaussian Mutation: x' = x + N(0, sigma)
+
+                # Gaussian Mutation: x' = x + N(0, sigma)
                 noise = np.random.normal(0, self.sigma, self.dim)
                 offspring = parent + noise
                 offspring = self.enforce_boundaries(np.atleast_2d(offspring))[0]
-                
+
                 offspring_population.append(offspring)
-            
-            # 3. Evaluation
+                offspring_parent_indices.append(parent_idx)
+
             offspring_population = np.array(offspring_population)
             offspring_fitness = self.evaluate_fitness(offspring_population)
-            
-            # 4. Success Rule Tracking
+
             for i in range(self.lambd):
                 self.total_mutations += 1
-                if offspring_fitness[i] < np.min(parent_fitness):
+                if offspring_fitness[i] < parent_fitness[offspring_parent_indices[i]]:
                     self.success_count += 1
             
-            # 5. Selection (mu + lambda strategy)
             combined_pop = np.vstack((parents, offspring_population))
             combined_fit = np.concatenate((parent_fitness, offspring_fitness))
             
@@ -80,7 +78,7 @@ class ES(BaseOptimizer):
             parents = combined_pop[indices[:self.mu]]
             parent_fitness = combined_fit[indices[:self.mu]]
             
-            # 6. Self-Adaptation: 1/5 Success Rule Update
+            # 1/5 Success Rule
             if generation_count % self.update_interval == 0:
                 ps = self.success_count / self.total_mutations
                 if ps > 0.2:
@@ -92,8 +90,8 @@ class ES(BaseOptimizer):
                 self.total_mutations = 0
 
         execution_time = time.time() - start_time
-        is_successful = 1 if self.best_fitness <= 1e-8 else 0
         
+        is_successful = 1 if self.best_fitness <= self.success_threshold else 0
         self.hparams['sigma_final'] = self.sigma
         
         return {
