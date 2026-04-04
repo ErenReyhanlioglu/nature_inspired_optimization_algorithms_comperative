@@ -1,7 +1,4 @@
-import os
-
-# README content with LaTeX and scientific structure
-readme_content = """# Nature-inspired Optimization Algorithms: A Comparative Study
+# Nature-inspired Optimization Algorithms: A Comparative Study
 
 This repository contains a comprehensive comparative analysis of nature-inspired meta-heuristic optimization algorithms. The study evaluates performance, scalability, and statistical reliability across multi-dimensional benchmark functions.
 
