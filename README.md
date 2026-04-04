@@ -39,11 +39,6 @@ To prove that results are not due to random chance, a **Two-sided Binomial Test*
 The Probability Mass Function (PMF) used for the exact test:
 $$P(X = k) = \\binom{n}{k} p^k (1-p)^{n-k}$$
 where $n=30$ and $k$ is the number of successes. A result is considered **statistically significant** if the $p\text{-value} < 0.05$.
-
-## 4. Visual Evidence & Artifacts
-The pipeline generates high-resolution evidence for comparative analysis:
-- **Convergence Animations (.gif):** Real-time population dynamics in the search space.
-- **Scientific Tables (.png):** Heatmap-enhanced distribution analysis with $10^x$ scientific notation.
 - **Reliability Index:** Color-coded p-values indicating the deterministic nature of success/failure.
     ├── algorithms/          # Meta-heuristic implementations
     ├── benchmarks/          # Mathematical test functions
