@@ -4,7 +4,6 @@ nature_inspired_optimization_algorithms_comperative/
 ├── .gitignore                          # Git tracking exclusions
 ├── requirements.txt                    # Project dependencies
 ├── main_simulation.py                  # Entry point for the 1620 statistical runs
-├── main_showcase.py                    # Entry point for D=2 visualization runs
 ├── config.py                           # Global configurations (hyperparameters, FEs, bounds)
 │
 ├── src/                                # Source code directory

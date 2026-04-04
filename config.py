@@ -3,7 +3,7 @@ import numpy as np
 DIMENSIONS = [10, 20, 30]  # Scalability test levels 
 RUNS_PER_SCENARIO = 30     # Independent runs for statistical significance 
 
-#  Size = D * 5
+#  pop_size = D * POP_SIZE_MULTIPLIER
 POP_SIZE_MULTIPLIER = 5
 
 SUCCESS_THRESHOLD = 1e-8
@@ -27,7 +27,6 @@ HYPERPARAMETERS = {
     "DE": {"F": 0.5, "CR": 0.9}, 
     "GWO": {"a_start": 2.0, "a_end": 0.0}, 
     "ABC": {"limit": None}, 
-    "RCGA": {"pc": 0.8, "pm": None, "tournament_size": 3}, # pm=None -> 1/dim adaptive
     # lambd is set to None to dynamically match the population size at runtime. 
     # mu will be calculated as lambd // 7 (Schwefel 1/7 rule).
     "ES": {"mu": None, "lambd": None, "sigma_init": None} 
