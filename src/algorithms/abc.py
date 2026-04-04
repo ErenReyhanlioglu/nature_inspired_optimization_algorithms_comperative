@@ -6,13 +6,15 @@ class ABC(BaseOptimizer):
     """
     Artificial Bee Colony (ABC) implementation.
     Focuses on localized exploitation (Employed/Onlooker) and global exploration (Scout).
-    Inherits administrative functions from BaseOptimizer.
+    Corrected to update only a single random dimension per perturbation.
     """
     def __init__(self, objective_func, bounds, dim, pop_size, max_fes, seed, **kwargs):
         super().__init__(objective_func, bounds, dim, pop_size, max_fes, seed, **kwargs)
 
+        # Standard formulation: food number is half of the total population
         self.food_number = self.pop_size // 2
         
+        # Standard heuristic for the limit parameter if not provided
         if getattr(self, 'limit', None) is None:
             self.limit = self.food_number * self.dim
             
@@ -39,11 +41,16 @@ class ABC(BaseOptimizer):
                 if self.fes_counter >= self.max_fes:
                     break
                 
+                # Select a random partner different from the current bee
                 k = np.random.choice([idx for idx in range(self.food_number) if idx != i])
-                phi = np.random.uniform(-1, 1, self.dim)
+                
+                j = np.random.randint(0, self.dim)
+                
+                phi = np.random.uniform(-1, 1)
 
-                # Generate and evaluate candidate food source
-                candidate = foods[i] + phi * (foods[i] - foods[k])
+                candidate = foods[i].copy()
+                candidate[j] = foods[i, j] + phi * (foods[i, j] - foods[k, j])
+                
                 candidate = self.enforce_boundaries(np.atleast_2d(candidate))
                 candidate_fit = self.evaluate_fitness(candidate)[0]
 
@@ -68,11 +75,17 @@ class ABC(BaseOptimizer):
                 if self.fes_counter >= self.max_fes:
                     break
                 
+                # Roulette wheel selection
                 if np.random.rand() < prob[n]:
                     k = np.random.choice([idx for idx in range(self.food_number) if idx != n])
-                    phi = np.random.uniform(-1, 1, self.dim)
+                    
+                    # Select a SINGLE random dimension to update (CRITICAL FIX)
+                    j = np.random.randint(0, self.dim)
+                    phi = np.random.uniform(-1, 1)
 
-                    candidate = foods[n] + phi * (foods[n] - foods[k])
+                    candidate = foods[n].copy()
+                    candidate[j] = foods[n, j] + phi * (foods[n, j] - foods[k, j])
+                    
                     candidate = self.enforce_boundaries(np.atleast_2d(candidate))
                     candidate_fit = self.evaluate_fitness(candidate)[0]
 
@@ -82,6 +95,7 @@ class ABC(BaseOptimizer):
                         self.trials[n] = 0
                     else:
                         self.trials[n] += 1
+                    
                     m += 1
                 n = (n + 1) % self.food_number
 
@@ -94,6 +108,7 @@ class ABC(BaseOptimizer):
                 if self.fes_counter >= self.max_fes:
                     break
                 
+                # Replace the abandoned food source completely with a new random one
                 foods[idx] = np.random.uniform(lower_bound, upper_bound, self.dim)
                 fitness[idx] = self.evaluate_fitness(np.atleast_2d(foods[idx]))[0]
                 self.trials[idx] = 0
