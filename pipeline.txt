@@ -29,7 +29,7 @@ nature_inspired_optimization_algorithms_comperative/
 │       └── visualizer.py               # Convergence curves, boxplots, and 2D animations
 │
 ├── data/                               # Data storage (ignored in version control)
-│   ├── raw/                            # 1620 raw JSON/CSV logs
+│   ├── raw/                            # 1530 raw JSON/CSV logs
 │   └── processed/                      # Aggregated statistical tables
 │
 └── outputs/                            # Generated artifacts
