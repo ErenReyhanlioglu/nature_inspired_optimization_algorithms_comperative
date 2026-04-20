@@ -16,7 +16,6 @@ nature_inspired_optimization_algorithms_comperative/
 │   │   ├── de.py                       # Differential Evolution
 │   │   ├── gwo.py                      # Grey Wolf Optimizer
 │   │   ├── abc.py                      # Artificial Bee Colony
-│   │   ├── rcga.py                     # Real-Coded Genetic Algorithm
 │   │   └── es.py                       # Evolution Strategies
 │   │
 │   ├── benchmarks/                     # Mathematical test environments
