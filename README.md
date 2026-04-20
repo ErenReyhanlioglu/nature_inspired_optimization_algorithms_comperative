@@ -1,5 +1,40 @@
 # Nature-inspired Optimization Algorithms: A Comparative Study
 
+nature_inspired_optimization_algorithms_comperative/
+│
+├── requirements.txt                    # Project dependencies
+├── main_simulation.py                  # Entry point for the 1530 statistical runs
+├── config.py                           # Global configurations (hyperparameters, FEs, bounds)
+│
+├── src/                                # Source code directory
+│   ├── __init__.py
+│   │
+│   ├── algorithms/                     # Meta-heuristic algorithm implementations
+│   │   ├── __init__.py
+│   │   ├── base_optimizer.py           # Abstract base class (OOP inheritance)
+│   │   ├── pso.py                      # Particle Swarm Optimization
+│   │   ├── de.py                       # Differential Evolution
+│   │   ├── gwo.py                      # Grey Wolf Optimizer
+│   │   ├── abc.py                      # Artificial Bee Colony
+│   │   └── es.py                       # Evolution Strategies
+│   │
+│   ├── benchmarks/                     # Mathematical test environments
+│   │   ├── __init__.py
+│   │   └── functions.py                # Sphere, Rastrigin, Rosenbrock definitions
+│   │
+│   └── utils/                          # Helper modules
+│       ├── __init__.py
+│       ├── logger.py                   # I/O operations (JSON/CSV data logging)
+│       ├── statistics_engine.py        # Wilcoxon, Friedman, Mean, Median, Std calculations
+│       └── visualizer.py               # Convergence curves, boxplots, and 2D animations
+│
+│
+└── outputs/                            # Generated artifacts
+    ├── figures/                        # Static convergence and boxplot images
+    ├── statistics/                     # Output of 1530 runs
+    └── animations/                     # 3D surface GIFs/MP4s from showcase runs
+
+
 This repository contains a comprehensive comparative analysis of nature-inspired meta-heuristic optimization algorithms. The study evaluates performance, scalability, and statistical reliability across multi-dimensional benchmark functions.
 
 ## 1. Project Overview
