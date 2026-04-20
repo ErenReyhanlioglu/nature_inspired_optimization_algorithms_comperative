@@ -26,7 +26,7 @@ nature_inspired_optimization_algorithms_comperative/
 │   └── utils/                          # Helper modules
 │       ├── __init__.py
 │       ├── logger.py                   # I/O operations (JSON/CSV data logging)
-│       ├── statistics_engine.py        # Wilcoxon, Friedman, Mean, Median, Std calculations
+│       ├── statistics_engine.py        # Binom Test, Mean, Median, Std calculations
 │       └── visualizer.py               # Convergence curves, boxplots, and 2D animations
 │
 │
