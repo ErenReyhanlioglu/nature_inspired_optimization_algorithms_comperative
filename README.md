@@ -1,5 +1,6 @@
 # Nature-inspired Optimization Algorithms: A Comparative Study
 
+```
 nature_inspired_optimization_algorithms_comperative/
 │
 ├── requirements.txt                    # Project dependencies
@@ -33,7 +34,7 @@ nature_inspired_optimization_algorithms_comperative/
     ├── figures/                        # Static convergence and boxplot images
     ├── statistics/                     # Output of 1530 runs
     └── animations/                     # 3D surface GIFs/MP4s from showcase runs
-
+```
 
 This repository contains a comprehensive comparative analysis of nature-inspired meta-heuristic optimization algorithms. The study evaluates performance, scalability, and statistical reliability across multi-dimensional benchmark functions.
 
